@@ -6,7 +6,10 @@ use gpui_component::{
     button::*, h_flex, scroll::ScrollableElement, v_flex, ActiveTheme, Icon, IconName,
 };
 
-use super::view::{CodeHubView, DtsView, ExcelView, HiveView, RequirementView};
+use super::{
+    title_bar::AppTitleBar,
+    view::{CodeHubView, DtsView, ExcelView, HiveView, RequirementView},
+};
 
 pub struct App {
     active_tab: usize,
@@ -22,37 +25,53 @@ impl Render for App {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let active_tab = self.active_tab;
 
-        v_flex().size_full().bg(cx.theme().background).child(
-            // 主内容区域
-            h_flex()
-                .flex_1()
-                .w_full()
-                .child(
-                    // 左侧导航
-                    v_flex()
-                        .w(px(200.0))
-                        .h_full()
-                        .bg(cx.theme().background)
-                        .border_r_1()
-                        .border_color(cx.theme().border)
-                        .p_2()
-                        .gap_1()
-                        .child(self.nav_button("CodeHub", IconName::GitMerge, 0, window, cx))
-                        .child(self.nav_button("DTS", IconName::Bug, 1, window, cx))
-                        .child(self.nav_button("Excel", IconName::FileSpreadsheet, 2, window, cx))
-                        .child(self.nav_button("Hive", IconName::Server, 3, window, cx))
-                        .child(self.nav_button("Requirement", IconName::ListChecks, 4, window, cx)),
-                )
-                .child(
-                    // 右侧内容区
-                    div()
-                        .flex_1()
-                        .h_full()
-                        .bg(cx.theme().background)
-                        .overflow_y_scrollbar()
-                        .child(self.render_content(active_tab, window, cx)),
-                ),
-        )
+        v_flex()
+            .size_full()
+            .bg(cx.theme().background)
+            .child(cx.new(|cx| AppTitleBar::new("Tasks Mine", cx).child(|_, _| div())))
+            .child(
+                // 主内容区域
+                h_flex()
+                    .flex_1()
+                    .w_full()
+                    .child(
+                        // 左侧导航
+                        v_flex()
+                            .w(px(200.0))
+                            .h_full()
+                            .bg(cx.theme().background)
+                            .border_r_1()
+                            .border_color(cx.theme().border)
+                            .p_2()
+                            .gap_1()
+                            .child(self.nav_button("CodeHub", IconName::GitMerge, 0, window, cx))
+                            .child(self.nav_button("DTS", IconName::Bug, 1, window, cx))
+                            .child(self.nav_button(
+                                "Excel",
+                                IconName::FileSpreadsheet,
+                                2,
+                                window,
+                                cx,
+                            ))
+                            .child(self.nav_button("Hive", IconName::Server, 3, window, cx))
+                            .child(self.nav_button(
+                                "Requirement",
+                                IconName::ListChecks,
+                                4,
+                                window,
+                                cx,
+                            )),
+                    )
+                    .child(
+                        // 右侧内容区
+                        div()
+                            .flex_1()
+                            .h_full()
+                            .bg(cx.theme().background)
+                            .overflow_y_scrollbar()
+                            .child(self.render_content(active_tab, window, cx)),
+                    ),
+            )
     }
 }
 
