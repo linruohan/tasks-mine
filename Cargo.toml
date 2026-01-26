@@ -1,0 +1,20 @@
+[package]
+name = "tasks-mine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gpui = { git = "https://github.com/zed-industries/zed" }
+gpui-component = { path = "../gpui-component/crates/ui" }
+anyhow = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11", features = ["json", "cookies"] }
+chrono = { version = "0.4", features = ["serde"] }
+calamine = "0.25"  # Excel 读取
+rust_xlsxwriter = "0.78"  # Excel 写入
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "chrono"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+env_logger = "0.11"
