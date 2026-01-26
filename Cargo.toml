@@ -18,3 +18,47 @@ sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "chrono"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 env_logger = "0.11"
+
+
+
+[lints.clippy]
+almost_complete_range = "allow"
+arc_with_non_send_sync = "allow"
+borrowed_box = "allow"
+dbg_macro = "deny"
+let_underscore_future = "allow"
+map_entry = "allow"
+module_inception = "allow"
+non_canonical_partial_ord_impl = "allow"
+reversed_empty_ranges = "allow"
+single_range_in_vec_init = "allow"
+style = { level = "allow", priority = -1 }
+todo = "deny"
+type_complexity = "allow"
+
+[profile.dev]
+codegen-units = 16
+split-debuginfo = "unpacked"
+opt-level = 2
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+rpath = false
+# 禁用debug
+debug = 0
+strip = "debuginfo"
+
+[profile.dev.package]
+resvg = { opt-level = 3 }
+rustybuzz = { opt-level = 3 }
+taffy = { opt-level = 3 }
+ttf-parser = { opt-level = 3 }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 8
+strip = true
+debug = false
