@@ -1,10 +1,8 @@
 use gpui::{App, Entity, Menu, MenuItem, SharedString};
 use gpui_component::{menu::AppMenuBar, ActiveTheme as _, Theme, ThemeMode, ThemeRegistry};
 
-use super::{
-    themes::{SwitchTheme, SwitchThemeMode},
-    About, Open, Quit, SelectLocale, ToggleSearch,
-};
+use super::themes::{SwitchTheme, SwitchThemeMode};
+use crate::{About, Open, Quit, SelectLocale, ToggleSearch};
 
 pub fn init(title: impl Into<SharedString>, cx: &mut App) -> Entity<AppMenuBar> {
     let app_menu_bar = AppMenuBar::new(cx);

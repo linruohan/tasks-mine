@@ -14,9 +14,7 @@ use gpui_component::{
     ActiveTheme as _, IconName, PixelsExt, Side, Sizable as _, Theme, TitleBar, WindowExt as _,
 };
 
-use crate::ui::{
-    app_menus, SelectFont, SelectRadius, SelectScrollbarShow, ToggleListActiveHighlight,
-};
+use crate::{app_menus, SelectFont, SelectRadius, SelectScrollbarShow, ToggleListActiveHighlight};
 
 pub struct AppTitleBar {
     app_menu_bar: Entity<AppMenuBar>,
