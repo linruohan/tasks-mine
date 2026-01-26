@@ -150,7 +150,7 @@ pub fn init(cx: &mut App) {
 
     gpui_component::init(cx);
     AppState::init(cx);
-    // themes::init(cx);
+    themes::init(cx);
 
     cx.bind_keys([
         KeyBinding::new("/", ToggleSearch, None),
