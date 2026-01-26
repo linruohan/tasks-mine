@@ -28,7 +28,7 @@ impl Render for App {
         v_flex()
             .size_full()
             .bg(cx.theme().background)
-            .child(cx.new(|cx| AppTitleBar::new("Tasks Mine", cx).child(|_, _| div())))
+            .child(cx.new(|cx| AppTitleBar::new("Tasks Mine", window, cx).child(|_, _| div())))
             .child(
                 // 主内容区域
                 h_flex()

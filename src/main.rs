@@ -2,7 +2,7 @@ mod ui;
 
 use gpui::*;
 use gpui_component::{Root, TitleBar};
-use ui::{theme, App};
+use ui::app::App;
 
 fn main() {
     env_logger::init();
@@ -11,7 +11,6 @@ fn main() {
 
     app.run(move |cx| {
         gpui_component::init(cx);
-        theme::init(cx);
 
         cx.spawn(async move |cx| {
             cx.open_window(
@@ -24,9 +23,9 @@ fn main() {
                     window_min_size: Some(Size { width: px(800.0), height: px(600.0) }),
                     ..Default::default()
                 },
-                |window, cx| {
-                    let view = cx.new(|_| App::new());
-                    cx.new(|cx| Root::new(view, window, cx))
+                |window, _cx| {
+                    let app_entity = _cx.new(|_| App::new());
+                    _cx.new(|cx| Root::new(app_entity, window, cx))
                 },
             )?;
 
