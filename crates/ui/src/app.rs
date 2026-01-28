@@ -1,13 +1,13 @@
 use gpui::{
-    div, prelude::FluentBuilder, px, AnyView, AppContext, Context, Entity, InteractiveElement,
-    IntoElement, ParentElement, Render, StatefulInteractiveElement, Styled, Subscription, Window,
+    AnyView, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
+    StatefulInteractiveElement, Styled, Subscription, Window, div, prelude::FluentBuilder, px,
 };
 use gpui_component::{
-    h_flex, input::{Input, InputEvent, InputState}, resizable::{h_resizable, resizable_panel}, sidebar::{Sidebar, SidebarHeader, SidebarMenu, SidebarMenuItem},
+    ActiveTheme, IconName,
+    input::{Input, InputEvent, InputState},
+    resizable::{h_resizable, resizable_panel},
+    sidebar::{Sidebar, SidebarMenu, SidebarMenuItem},
     v_flex,
-    ActiveTheme,
-    Icon,
-    IconName,
 };
 
 use super::view::{CodeHubView, DtsView, ExcelView, HiveView, RequirementView};
@@ -122,8 +122,8 @@ impl Render for TasksApp {
         let active_story =
             filtered.iter().find(|(idx, _)| *idx == active_idx).or_else(|| filtered.first());
 
-        let story_name = active_story.map(|(_, story)| story.name).unwrap_or("");
-        let story_desc = active_story.map(|(_, story)| story.description).unwrap_or("");
+        let _story_name = active_story.map(|(_, story)| story.name).unwrap_or("");
+        let _story_desc = active_story.map(|(_, story)| story.description).unwrap_or("");
 
         v_flex().size_full().bg(cx.theme().background).child(
             h_resizable("app-shell")
@@ -134,69 +134,30 @@ impl Render for TasksApp {
                             .border_0()
                             .collapsed(self.collapsed)
                             .header(
-                                v_flex()
-                                    .w_full()
-                                    .gap_4()
-                                    .child(
-                                        SidebarHeader::new()
-                                            .w_full()
-                                            .child(
-                                                div()
-                                                    .flex()
-                                                    .items_center()
-                                                    .justify_center()
-                                                    .rounded(cx.theme().radius)
-                                                    .bg(cx.theme().primary)
-                                                    .text_color(cx.theme().primary_foreground)
-                                                    .size_8()
-                                                    .flex_shrink_0()
-                                                    .child(Icon::new(IconName::GalleryVerticalEnd)),
-                                            )
-                                            .when(!self.collapsed, |this| {
-                                                this.child(
-                                                    v_flex()
-                                                        .gap_0()
-                                                        .text_sm()
-                                                        .flex_1()
-                                                        .line_height(px(20.0))
-                                                        .overflow_hidden()
-                                                        .text_ellipsis()
-                                                        .child("Tasks Mine")
-                                                        .child(
-                                                            div()
-                                                                .text_color(
-                                                                    cx.theme().muted_foreground,
-                                                                )
-                                                                .child("功能导航")
-                                                                .text_xs(),
-                                                        ),
-                                                )
-                                            }),
-                                    )
-                                    .child(
-                                        div()
-                                            .bg(cx.theme().sidebar_accent)
-                                            .rounded_full()
-                                            .px_1()
-                                            .flex_1()
-                                            .mx_1()
-                                            .child(
-                                                Input::new(&self.search_input)
-                                                    .appearance(false)
-                                                    .cleanable(true),
-                                            ),
-                                    ),
+                                v_flex().w_full().gap_4().child(
+                                    div()
+                                        .bg(cx.theme().sidebar_accent)
+                                        .rounded_full()
+                                        .px_1()
+                                        .flex_1()
+                                        .mx_1()
+                                        .child(
+                                            Input::new(&self.search_input)
+                                                .appearance(false)
+                                                .cleanable(true),
+                                        ),
+                                ),
                             )
                             .children(filtered.iter().map(|(idx, story)| {
                                 let idx = *idx;
-                                    SidebarMenu::new().child(
-                                        SidebarMenuItem::new(story.name)
-                                            .active(self.active_index == Some(idx))
-                                            .on_click(cx.listener(move |this, _, _, cx| {
-                                                this.active_index = Some(idx);
-                                                cx.notify();
-                                            })),
-                                    )
+                                SidebarMenu::new().child(
+                                    SidebarMenuItem::new(story.name)
+                                        .active(self.active_index == Some(idx))
+                                        .on_click(cx.listener(move |this, _, _, cx| {
+                                            this.active_index = Some(idx);
+                                            cx.notify();
+                                        })),
+                                )
                             })),
                     ),
                 )
@@ -205,25 +166,6 @@ impl Render for TasksApp {
                         .flex_1()
                         .h_full()
                         .overflow_x_hidden()
-                        .child(
-                            h_flex()
-                                .id("header")
-                                .p_4()
-                                .border_b_1()
-                                .border_color(cx.theme().border)
-                                .justify_between()
-                                .items_start()
-                                .child(
-                                    v_flex()
-                                        .gap_1()
-                                        .child(div().text_xl().child(story_name))
-                                        .child(
-                                            div()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(story_desc),
-                                        ),
-                                ),
-                        )
                         .child(
                             div()
                                 .id("story")

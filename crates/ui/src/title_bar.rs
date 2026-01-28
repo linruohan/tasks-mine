@@ -1,20 +1,20 @@
 use std::rc::Rc;
 
 use gpui::{
-    AnyElement, App, AppContext, Context, Corner, Entity, FocusHandle, InteractiveElement as _,
-    IntoElement, MouseButton, ParentElement as _, Render, SharedString, Styled as _, Subscription,
-    Window, div, px,
+    div, px, AnyElement, App, AppContext, Context, Corner, Entity,
+    FocusHandle, InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Render, SharedString,
+    Styled as _, Subscription, Window,
 };
 use gpui_component::{
-    ActiveTheme as _, IconName, PixelsExt, Side, Sizable as _, Theme, TitleBar, WindowExt as _,
-    badge::Badge,
-    button::{Button, ButtonVariants as _},
-    label::Label,
-    menu::{AppMenuBar, DropdownMenu as _},
-    scroll::ScrollbarShow,
+    badge::Badge, button::{Button, ButtonVariants as _}, label::Label, menu::{AppMenuBar, DropdownMenu as _}, scroll::ScrollbarShow, ActiveTheme as _, IconName, PixelsExt,
+    Side,
+    Sizable as _,
+    Theme,
+    TitleBar,
+    WindowExt as _,
 };
 
-use crate::{SelectFont, SelectRadius, SelectScrollbarShow, ToggleListActiveHighlight, app_menus};
+use crate::{app_menus, SelectFont, SelectRadius, SelectScrollbarShow, ToggleListActiveHighlight};
 
 pub struct AppTitleBar {
     app_menu_bar: Entity<AppMenuBar>,
@@ -78,7 +78,7 @@ impl Render for AppTitleBar {
                             .small()
                             .ghost()
                             .on_click(|_, _, cx| {
-                                cx.open_url("https://github.com/longbridge/gpui-component")
+                                cx.open_url("https://github.com/linruohan/gpui-component")
                             }),
                     )
                     .child(
