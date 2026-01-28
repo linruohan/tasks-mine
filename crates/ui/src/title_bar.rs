@@ -1,20 +1,20 @@
 use std::rc::Rc;
 
 use gpui::{
-    div, px, AnyElement, App, AppContext, Context, Corner, Entity,
-    FocusHandle, InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Render, SharedString,
-    Styled as _, Subscription, Window,
+    AnyElement, App, AppContext, Context, Corner, Entity, FocusHandle, InteractiveElement as _,
+    IntoElement, MouseButton, ParentElement as _, Render, SharedString, Styled as _, Subscription,
+    Window, div, px,
 };
 use gpui_component::{
-    badge::Badge, button::{Button, ButtonVariants as _}, label::Label, menu::{AppMenuBar, DropdownMenu as _}, scroll::ScrollbarShow, ActiveTheme as _, IconName, PixelsExt,
-    Side,
-    Sizable as _,
-    Theme,
-    TitleBar,
-    WindowExt as _,
+    ActiveTheme as _, IconName, PixelsExt, Side, Sizable as _, Theme, TitleBar, WindowExt as _,
+    badge::Badge,
+    button::{Button, ButtonVariants as _},
+    label::Label,
+    menu::{AppMenuBar, DropdownMenu as _},
+    scroll::ScrollbarShow,
 };
 
-use crate::{app_menus, SelectFont, SelectRadius, SelectScrollbarShow, ToggleListActiveHighlight};
+use crate::{SelectFont, SelectRadius, SelectScrollbarShow, ToggleListActiveHighlight, app_menus};
 
 pub struct AppTitleBar {
     app_menu_bar: Entity<AppMenuBar>,
