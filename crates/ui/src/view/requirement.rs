@@ -1,9 +1,15 @@
 use chrono::{DateTime, Utc};
 use gpui::{
     App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
-    Styled, Window, div, px, rgb,
+    Styled, Subscription, Window, div, rgb,
 };
-use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
+use gpui_component::{
+    ActiveTheme, Icon, IconName, Sizable, StyledExt,
+    button::*,
+    h_flex,
+    input::{Input, InputEvent, InputState},
+    v_flex,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,6 +26,9 @@ pub struct Requirement {
 
 pub struct RequirementView {
     requirements: Vec<Requirement>,
+    search_input: Entity<InputState>,
+    search_value: Option<String>,
+    _subscriptions: Vec<Subscription>,
 }
 
 impl RequirementView {
@@ -27,13 +36,94 @@ impl RequirementView {
         cx.new(|cx| Self::new(window, cx))
     }
 
-    pub fn new(_: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Self { requirements: vec![] }
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let search_input = cx.new(|cx| InputState::new(window, cx).placeholder("搜索需求..."));
+
+        // 添加测试数据
+        let requirements = vec![
+            Requirement {
+                id: "REQ001".to_string(),
+                title: "用户认证系统".to_string(),
+                version: "v1.0".to_string(),
+                test_cycle: "2周".to_string(),
+                start_date: Utc::now(),
+                end_date: Utc::now(),
+                status: "进行中".to_string(),
+                owner: "张三".to_string(),
+            },
+            Requirement {
+                id: "REQ002".to_string(),
+                title: "支付功能模块".to_string(),
+                version: "v2.0".to_string(),
+                test_cycle: "3周".to_string(),
+                start_date: Utc::now(),
+                end_date: Utc::now(),
+                status: "进行中".to_string(),
+                owner: "李四".to_string(),
+            },
+            Requirement {
+                id: "REQ003".to_string(),
+                title: "数据分析平台".to_string(),
+                version: "v1.5".to_string(),
+                test_cycle: "4周".to_string(),
+                start_date: Utc::now(),
+                end_date: Utc::now(),
+                status: "已完成".to_string(),
+                owner: "王五".to_string(),
+            },
+            Requirement {
+                id: "REQ004".to_string(),
+                title: "移动端适配".to_string(),
+                version: "v1.0".to_string(),
+                test_cycle: "2周".to_string(),
+                start_date: Utc::now(),
+                end_date: Utc::now(),
+                status: "延期".to_string(),
+                owner: "赵六".to_string(),
+            },
+        ];
+
+        let subscriptions = vec![cx.subscribe_in(&search_input, window, Self::on_input_event)];
+
+        Self { requirements, search_input, search_value: None, _subscriptions: subscriptions }
+    }
+
+    fn on_input_event(
+        &mut self,
+        state: &Entity<InputState>,
+        event: &InputEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        match event {
+            InputEvent::Change => {
+                let text = state.read(cx).value();
+                if state == &self.search_input {
+                    self.search_value = Some(text.into());
+                }
+            },
+            _ => {},
+        };
     }
 }
 
 impl Render for RequirementView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let search_query = self.search_input.read(cx).value().trim().to_lowercase();
+
+        // 根据搜索查询过滤需求
+        let filtered_requirements: Vec<&Requirement> = self
+            .requirements
+            .iter()
+            .filter(|req: &&Requirement| {
+                search_query.is_empty()
+                    || req.title.to_lowercase().contains(&search_query)
+                    || req.owner.to_lowercase().contains(&search_query)
+                    || req.id.to_lowercase().contains(&search_query)
+                    || req.version.to_lowercase().contains(&search_query)
+            })
+            .collect();
+
         v_flex()
             .size_full()
             .p_4()
@@ -59,12 +149,11 @@ impl Render for RequirementView {
                 h_flex()
                     .w_full()
                     .gap_4()
-                    .child(self.stat_card("总需求", &self.requirements.len().to_string(), cx))
+                    .child(self.stat_card("总需求", &filtered_requirements.len().to_string(), cx))
                     .child(
                         self.stat_card(
                             "进行中",
-                            &self
-                                .requirements
+                            &filtered_requirements
                                 .iter()
                                 .filter(|r| r.status == "进行中")
                                 .count()
@@ -75,8 +164,7 @@ impl Render for RequirementView {
                     .child(
                         self.stat_card(
                             "已完成",
-                            &self
-                                .requirements
+                            &filtered_requirements
                                 .iter()
                                 .filter(|r| r.status == "已完成")
                                 .count()
@@ -87,8 +175,7 @@ impl Render for RequirementView {
                     .child(
                         self.stat_card(
                             "延期",
-                            &self
-                                .requirements
+                            &filtered_requirements
                                 .iter()
                                 .filter(|r| r.status == "延期")
                                 .count()
@@ -104,14 +191,11 @@ impl Render for RequirementView {
                     .gap_4()
                     .items_center()
                     .child(
-                        div()
-                            .w(px(300.0))
-                            .h(px(30.0))
-                            .border_1()
-                            .border_color(cx.theme().border)
-                            .rounded_md()
-                            .p_2()
-                            .child("搜索需求..."),
+                        div().flex_1().child(
+                            Input::new(&self.search_input)
+                                .cleanable(true)
+                                .prefix(Icon::new(IconName::Search).size_4()),
+                        ),
                     )
                     .child(
                         Button::new("add-req-btn")
@@ -141,7 +225,7 @@ impl Render for RequirementView {
                             .border_color(cx.theme().border)
                             .rounded_md()
                             .p_4()
-                            .child(if self.requirements.is_empty() {
+                            .child(if filtered_requirements.is_empty() {
                                 v_flex()
                                     .size_full()
                                     .items_center()
@@ -152,13 +236,15 @@ impl Render for RequirementView {
                                             .size_16()
                                             .text_color(cx.theme().muted_foreground),
                                     )
-                                    .child(
-                                        div()
-                                            .text_color(cx.theme().muted_foreground)
-                                            .child("暂无需求数据"),
-                                    )
+                                    .child(div().text_color(cx.theme().muted_foreground).child(
+                                        if search_query.is_empty() {
+                                            "暂无需求数据"
+                                        } else {
+                                            "没有找到匹配的需求"
+                                        },
+                                    ))
                             } else {
-                                div().child(self.render_requirement_list(cx))
+                                div().child(self.render_requirement_list(filtered_requirements, cx))
                             }),
                     ),
             )
@@ -181,11 +267,15 @@ impl RequirementView {
             .child(div().text_2xl().font_bold().text_color(cx.theme().foreground).child(value))
     }
 
-    fn render_requirement_list(&self, cx: &Context<Self>) -> impl IntoElement {
+    fn render_requirement_list(
+        &self,
+        requirements: Vec<&Requirement>,
+        cx: &Context<Self>,
+    ) -> impl IntoElement {
         v_flex()
             .w_full()
             .gap_2()
-            .children(self.requirements.iter().map(|req| self.render_requirement_item(req, cx)))
+            .children(requirements.iter().map(|req| self.render_requirement_item(req, cx)))
     }
 
     fn render_requirement_item(&self, req: &Requirement, cx: &Context<Self>) -> impl IntoElement {

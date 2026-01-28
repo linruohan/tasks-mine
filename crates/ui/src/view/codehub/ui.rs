@@ -3,7 +3,7 @@ use std::{fs::File, io::prelude::*};
 use chrono::Days;
 use gpui::{
     App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
-    SharedString, Styled, Subscription, Window, div, rgb,
+    Styled, Subscription, Window, div, rgb,
 };
 use gpui_component::{
     ActiveTheme, Icon, IconName, Sizable, StyledExt, WindowExt,
@@ -20,7 +20,7 @@ pub struct CodeHubView {
     date_range_picker: Entity<DatePickerState>,
     date_picker_value: Option<String>,
     search_input: Entity<InputState>,
-    search_value: Option<SharedString>,
+    search_value: Option<String>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -94,16 +94,6 @@ impl CodeHubView {
                             });
                         }
                     }
-                    // this.mrs.retain(|mr| {
-                    //     match chrono::DateTime::parse_from_str(&mr.created_at, "%Y-%m-%d
-                    // %H:%M:%S")     {
-                    //         Ok(mr_date) => {
-                    //             let mr_naive_date = mr_date.naive_local().date();
-                    //             mr_naive_date >= start_date && mr_naive_date <= end_date
-                    //         },
-                    //         Err(_) => true,
-                    //     }
-                    // });
                 },
             }),
         ];
@@ -126,18 +116,14 @@ impl CodeHubView {
         &mut self,
         state: &Entity<InputState>,
         event: &InputEvent,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         match event {
             InputEvent::Change => {
                 let text = state.read(cx).value();
                 if state == &self.search_input {
-                    println!("Set disabled value: {}", text.clone());
-                    self.search_value = Some(text.clone());
-                    self.search_input.update(cx, |this, cx| {
-                        this.set_value(text, window, cx);
-                    })
+                    self.search_value = Some(text.into());
                 } else {
                     println!("Change: {}", text)
                 }

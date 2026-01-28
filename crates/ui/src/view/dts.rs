@@ -1,9 +1,15 @@
 use chrono::{DateTime, Utc};
 use gpui::{
     App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
-    Styled, Window, div, px, rgb,
+    Styled, Subscription, Window, div, rgb,
 };
-use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
+use gpui_component::{
+    ActiveTheme, Icon, IconName, Sizable, StyledExt,
+    button::*,
+    h_flex,
+    input::{Input, InputEvent, InputState},
+    v_flex,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,15 +26,86 @@ pub struct Issue {
 pub struct DtsView {
     issues: Vec<Issue>,
     filter_status: String,
+    search_input: Entity<InputState>,
+    search_value: Option<String>,
+    _subscriptions: Vec<Subscription>,
 }
 
 impl DtsView {
-    pub fn new() -> Self {
-        Self { issues: vec![], filter_status: "all".to_string() }
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let search_input = cx.new(|cx| InputState::new(window, cx).placeholder("搜索问题单..."));
+
+        // 添加测试数据
+        let issues = vec![
+            Issue {
+                id: "DTS001".to_string(),
+                title: "登录页面显示异常".to_string(),
+                severity: "严重".to_string(),
+                status: "提交".to_string(),
+                created_at: Utc::now(),
+                resolved_at: None,
+                assignee: "张三".to_string(),
+            },
+            Issue {
+                id: "DTS002".to_string(),
+                title: "数据库连接超时".to_string(),
+                severity: "严重".to_string(),
+                status: "提交".to_string(),
+                created_at: Utc::now(),
+                resolved_at: None,
+                assignee: "李四".to_string(),
+            },
+            Issue {
+                id: "DTS003".to_string(),
+                title: "按钮样式不对齐".to_string(),
+                severity: "一般".to_string(),
+                status: "提交".to_string(),
+                created_at: Utc::now(),
+                resolved_at: Some(Utc::now()),
+                assignee: "王五".to_string(),
+            },
+            Issue {
+                id: "DTS004".to_string(),
+                title: "文本输入框光标位置错误".to_string(),
+                severity: "轻微".to_string(),
+                status: "提交".to_string(),
+                created_at: Utc::now(),
+                resolved_at: None,
+                assignee: "赵六".to_string(),
+            },
+        ];
+
+        let subscriptions = vec![cx.subscribe_in(&search_input, window, Self::on_input_event)];
+
+        Self {
+            issues,
+            filter_status: "all".to_string(),
+            search_input,
+            search_value: None,
+            _subscriptions: subscriptions,
+        }
     }
 
     pub fn view(_window: &mut Window, cx: &mut App) -> Entity<Self> {
-        cx.new(|_| Self::new())
+        cx.new(|cx| Self::new(_window, cx))
+    }
+
+    fn on_input_event(
+        &mut self,
+        state: &Entity<InputState>,
+        event: &InputEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        match event {
+            InputEvent::Change => {
+                let text = state.read(cx).value();
+                if state == &self.search_input {
+                    self.search_value = Some(text.into());
+                }
+            },
+            _ => {},
+        };
     }
 
     fn calculate_stats(&self) -> (usize, usize, usize) {
@@ -41,7 +118,21 @@ impl DtsView {
 
 impl Render for DtsView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let (submitted, resolved, total) = self.calculate_stats();
+        let search_query = self.search_input.read(cx).value().trim().to_lowercase();
+
+        // 根据搜索查询过滤问题单
+        let filtered_issues: Vec<&Issue> = self
+            .issues
+            .iter()
+            .filter(|issue: &&Issue| {
+                search_query.is_empty()
+                    || issue.title.to_lowercase().contains(&search_query)
+                    || issue.assignee.to_lowercase().contains(&search_query)
+                    || issue.id.to_lowercase().contains(&search_query)
+            })
+            .collect();
+
+        let (submitted, resolved, total) = self.calculate_stats_filtered(&filtered_issues);
 
         v_flex()
             .size_full()
@@ -83,14 +174,11 @@ impl Render for DtsView {
                     .gap_4()
                     .items_center()
                     .child(
-                        div()
-                            .w(px(300.0))
-                            .h(px(30.0))
-                            .border_1()
-                            .border_color(cx.theme().border)
-                            .rounded_md()
-                            .p_2()
-                            .child("搜索问题单..."),
+                        div().flex_1().child(
+                            Input::new(&self.search_input)
+                                .cleanable(true)
+                                .prefix(Icon::new(IconName::Search).size_4()),
+                        ),
                     )
                     .child(
                         Button::new("add-issue-btn")
@@ -132,7 +220,7 @@ impl Render for DtsView {
                                             .child("暂无问题单数据"),
                                     )
                             } else {
-                                div().child(self.render_issue_list(cx))
+                                div().child(self.render_issue_list(filtered_issues, cx))
                             }),
                     ),
             )
@@ -155,11 +243,18 @@ impl DtsView {
             .child(div().text_2xl().font_bold().text_color(cx.theme().foreground).child(value))
     }
 
-    fn render_issue_list(&self, cx: &Context<Self>) -> impl IntoElement {
+    fn calculate_stats_filtered(&self, issues: &[&Issue]) -> (usize, usize, usize) {
+        let submitted = issues.iter().filter(|i| i.status == "提交").count();
+        let resolved = issues.iter().filter(|i| i.resolved_at.is_some()).count();
+        let total = issues.len();
+        (submitted, resolved, total)
+    }
+
+    fn render_issue_list(&self, issues: Vec<&Issue>, cx: &Context<Self>) -> impl IntoElement {
         v_flex()
             .w_full()
             .gap_2()
-            .children(self.issues.iter().map(|issue| self.render_issue_item(issue, cx)))
+            .children(issues.iter().map(|issue| self.render_issue_item(issue, cx)))
     }
 
     fn render_issue_item(&self, issue: &Issue, cx: &Context<Self>) -> impl IntoElement {

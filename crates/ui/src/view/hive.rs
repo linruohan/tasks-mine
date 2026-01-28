@@ -1,8 +1,14 @@
 use gpui::{
-    App, AppContext, Context, Entity, IntoElement, ParentElement, Render, Styled, Window, div,
-    prelude::FluentBuilder, px, relative, rgb,
+    App, AppContext, Context, Entity, IntoElement, ParentElement, Render, Styled, Subscription,
+    Window, div, prelude::FluentBuilder, px, relative, rgb,
 };
-use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
+use gpui_component::{
+    ActiveTheme, Icon, IconName, Sizable, StyledExt,
+    button::*,
+    h_flex,
+    input::{Input, InputEvent, InputState},
+    v_flex,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +40,9 @@ pub struct HiveView {
     failed_cases: Vec<TestCase>,
     virtual_envs: Vec<VirtualEnv>,
     jobs: Vec<Job>,
+    search_input: Entity<InputState>,
+    search_value: Option<String>,
+    _subscriptions: Vec<Subscription>,
 }
 
 impl HiveView {
@@ -41,8 +50,96 @@ impl HiveView {
         cx.new(|cx| Self::new(window, cx))
     }
 
-    pub fn new(_: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Self { active_tab: 0, failed_cases: vec![], virtual_envs: vec![], jobs: vec![] }
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let search_input = cx.new(|cx| InputState::new(window, cx).placeholder("搜索失败用例..."));
+
+        // 添加测试数据
+        let failed_cases = vec![
+            TestCase {
+                id: "TC001".to_string(),
+                name: "用户登录功能测试".to_string(),
+                status: "失败".to_string(),
+                error_msg: Some("连接超时".to_string()),
+            },
+            TestCase {
+                id: "TC002".to_string(),
+                name: "数据导出功能测试".to_string(),
+                status: "失败".to_string(),
+                error_msg: Some("内存不足".to_string()),
+            },
+            TestCase {
+                id: "TC003".to_string(),
+                name: "支付流程测试".to_string(),
+                status: "失败".to_string(),
+                error_msg: Some("网络错误".to_string()),
+            },
+        ];
+
+        let virtual_envs = vec![
+            VirtualEnv {
+                id: "ENV001".to_string(),
+                name: "测试环境1".to_string(),
+                status: "空闲".to_string(),
+                owner: None,
+            },
+            VirtualEnv {
+                id: "ENV002".to_string(),
+                name: "测试环境2".to_string(),
+                status: "占用".to_string(),
+                owner: Some("张三".to_string()),
+            },
+            VirtualEnv {
+                id: "ENV003".to_string(),
+                name: "测试环境3".to_string(),
+                status: "部署中".to_string(),
+                owner: None,
+            },
+        ];
+
+        let jobs = vec![
+            Job {
+                id: "JOB001".to_string(),
+                name: "自动化测试Job".to_string(),
+                status: "运行中".to_string(),
+                progress: 0.65,
+            },
+            Job {
+                id: "JOB002".to_string(),
+                name: "性能测试Job".to_string(),
+                status: "运行中".to_string(),
+                progress: 0.42,
+            },
+        ];
+
+        let subscriptions = vec![cx.subscribe_in(&search_input, window, Self::on_input_event)];
+
+        Self {
+            active_tab: 0,
+            failed_cases,
+            virtual_envs,
+            jobs,
+            search_input,
+            search_value: None,
+            _subscriptions: subscriptions,
+        }
+    }
+
+    fn on_input_event(
+        &mut self,
+        state: &Entity<InputState>,
+        event: &InputEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        match event {
+            InputEvent::Change => {
+                let text = state.read(cx).value();
+                if state == &self.search_input {
+                    self.search_value = Some(text.into());
+                }
+            },
+            _ => {},
+        };
     }
 }
 
@@ -80,6 +177,23 @@ impl Render for HiveView {
 
 impl HiveView {
     fn render_failed_cases(&self, _window: &mut Window, cx: &Context<Self>) -> impl IntoElement {
+        let search_query = self.search_input.read(cx).value().trim().to_lowercase();
+
+        // 根据搜索查询过滤失败用例
+        let filtered_cases: Vec<&TestCase> = self
+            .failed_cases
+            .iter()
+            .filter(|case: &&TestCase| {
+                search_query.is_empty()
+                    || case.name.to_lowercase().contains(&search_query)
+                    || case.id.to_lowercase().contains(&search_query)
+                    || case
+                        .error_msg
+                        .as_ref()
+                        .map_or(false, |msg| msg.to_lowercase().contains(&search_query))
+            })
+            .collect();
+
         v_flex()
             .flex_1()
             .w_full()
@@ -89,14 +203,11 @@ impl HiveView {
                     .w_full()
                     .gap_2()
                     .child(
-                        div()
-                            .w(px(300.0))
-                            .h(px(30.0))
-                            .border_1()
-                            .border_color(cx.theme().border)
-                            .rounded_md()
-                            .p_2()
-                            .child("搜索失败用例..."),
+                        div().flex_1().child(
+                            Input::new(&self.search_input)
+                                .cleanable(true)
+                                .prefix(Icon::new(IconName::Search).size_4()),
+                        ),
                     )
                     .child(
                         Button::new("analyze-btn")
@@ -119,7 +230,7 @@ impl HiveView {
                     .border_color(cx.theme().border)
                     .rounded_md()
                     .p_4()
-                    .child(if self.failed_cases.is_empty() {
+                    .child(if filtered_cases.is_empty() {
                         v_flex()
                             .size_full()
                             .items_center()
@@ -130,11 +241,15 @@ impl HiveView {
                                     .size_16()
                                     .text_color(cx.theme().muted_foreground),
                             )
-                            .child(
-                                div().text_color(cx.theme().muted_foreground).child("暂无失败用例"),
-                            )
+                            .child(div().text_color(cx.theme().muted_foreground).child(
+                                if search_query.is_empty() {
+                                    "暂无失败用例"
+                                } else {
+                                    "没有找到匹配的用例"
+                                },
+                            ))
                     } else {
-                        div().child(self.render_case_list(cx))
+                        div().child(self.render_case_list(filtered_cases, cx))
                     }),
             )
     }
@@ -242,8 +357,8 @@ impl HiveView {
             )
     }
 
-    fn render_case_list(&self, cx: &Context<Self>) -> impl IntoElement {
-        v_flex().w_full().gap_2().children(self.failed_cases.iter().map(|case| {
+    fn render_case_list(&self, cases: Vec<&TestCase>, cx: &Context<Self>) -> impl IntoElement {
+        v_flex().w_full().gap_2().children(cases.iter().map(|case| {
             h_flex()
                 .w_full()
                 .p_3()
