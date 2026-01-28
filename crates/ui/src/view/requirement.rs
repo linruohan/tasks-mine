@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use gpui::{
-    div, px, rgb, Context, InteractiveElement, IntoElement, ParentElement, Render, Styled, Window,
+    Context, InteractiveElement, IntoElement, ParentElement, Render, Styled, Window, div, px, rgb,
 };
-use gpui_component::{button::*, h_flex, v_flex, ActiveTheme, Icon, IconName, Sizable, StyledExt};
+use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

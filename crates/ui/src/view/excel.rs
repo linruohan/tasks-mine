@@ -1,5 +1,5 @@
-use gpui::{div, Context, IntoElement, ParentElement, Render, Styled, Window};
-use gpui_component::{button::*, h_flex, v_flex, ActiveTheme, Icon, IconName, StyledExt};
+use gpui::{Context, IntoElement, ParentElement, Render, Styled, Window, div};
+use gpui_component::{ActiveTheme, Icon, IconName, StyledExt, button::*, h_flex, v_flex};
 
 pub struct ExcelView {
     file_path: String,

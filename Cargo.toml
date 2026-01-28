@@ -1,9 +1,12 @@
-[package]
-name = "tasks-mine"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["crates/ui"]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+publish = false
+edition = "2024"
+
+[workspace.dependencies]
 gpui = { git = "https://github.com/zed-industries/zed" }
 gpui-macros = "0.2.2"
 gpui-component = { git = "https://github.com/linruohan/gpui-component.git" }
@@ -18,8 +21,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 env_logger = "0.11"
 rust-i18n = "3"
 
-
-[lints.clippy]
+[workspace.lints.clippy]
 almost_complete_range = "allow"
 arc_with_non_send_sync = "allow"
 borrowed_box = "allow"
@@ -44,7 +46,6 @@ lto = false
 panic = 'unwind'
 incremental = true
 rpath = false
-# 禁用debug
 debug = 0
 strip = "debuginfo"
 

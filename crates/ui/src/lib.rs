@@ -1,27 +1,28 @@
+pub mod app;
 mod app_menus;
 mod themes;
 mod title_bar;
 mod tools;
-mod ui;
 mod utils;
+pub mod view;
 use gpui::{
-    actions, div, px, rems, size, Action, AnyElement, AnyView, App, AppContext, Bounds, Context,
-    Div, Entity, FocusHandle, Focusable, Global, InteractiveElement, IntoElement, KeyBinding,
-    ParentElement, Pixels, Render, RenderOnce, SharedString, Size, StyleRefinement, Styled, Window,
-    WindowBounds, WindowKind, WindowOptions,
+    Action, AnyElement, AnyView, App, AppContext, Bounds, Context, Div, Entity, FocusHandle,
+    Focusable, Global, InteractiveElement, IntoElement, KeyBinding, ParentElement, Pixels, Render,
+    RenderOnce, SharedString, Size, StyleRefinement, Styled, Window, WindowBounds, WindowKind,
+    WindowOptions, actions, div, px, rems, size,
 };
 use gpui_component::{
+    ActiveTheme, Root, TitleBar, WindowExt,
     dock::Panel,
     group_box::{GroupBox, GroupBoxVariants as _},
     h_flex,
     notification::Notification,
     scroll::ScrollbarShow,
-    v_flex, ActiveTheme, Root, TitleBar, WindowExt,
+    v_flex,
 };
 use serde::Deserialize;
 pub use tools::*;
 use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
-pub use ui::*;
 
 use crate::title_bar::AppTitleBar;
 

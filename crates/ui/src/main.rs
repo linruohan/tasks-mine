@@ -1,5 +1,3 @@
-mod ui;
-
 use gpui::Application;
 use gpui_component_assets::Assets;
 use tasks_mine::app::TasksApp;

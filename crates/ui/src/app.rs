@@ -1,13 +1,13 @@
 use gpui::{
-    div, prelude::FluentBuilder, px, AnyView, AppContext, Context, Entity, InteractiveElement,
-    IntoElement, ParentElement, Render, StatefulInteractiveElement, Styled, Subscription, Window,
+    AnyView, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
+    StatefulInteractiveElement, Styled, Subscription, Window, div, prelude::FluentBuilder, px,
 };
 use gpui_component::{
-    h_flex,
+    ActiveTheme, Icon, IconName, h_flex,
     input::{Input, InputEvent, InputState},
     resizable::{h_resizable, resizable_panel},
     sidebar::{Sidebar, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuItem},
-    v_flex, ActiveTheme, Icon, IconName,
+    v_flex,
 };
 
 use super::view::{CodeHubView, DtsView, ExcelView, HiveView, RequirementView};

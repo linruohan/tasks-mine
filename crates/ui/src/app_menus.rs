@@ -1,8 +1,7 @@
 use gpui::{App, Entity, Menu, MenuItem, SharedString};
-use gpui_component::{menu::AppMenuBar, ActiveTheme as _, Theme, ThemeMode, ThemeRegistry};
+use gpui_component::{ActiveTheme as _, Theme, ThemeRegistry, menu::AppMenuBar};
 
-use super::themes::{SwitchTheme, SwitchThemeMode};
-use crate::{About, Open, Quit, SelectLocale, ToggleSearch};
+use super::{About, Open, Quit, SelectLocale, ToggleSearch, themes::SwitchTheme};
 
 pub fn init(title: impl Into<SharedString>, cx: &mut App) -> Entity<AppMenuBar> {
     let app_menu_bar = AppMenuBar::new(cx);
@@ -32,7 +31,7 @@ pub fn init(title: impl Into<SharedString>, cx: &mut App) -> Entity<AppMenuBar> 
 }
 
 fn update_app_menu(title: impl Into<SharedString>, app_menu_bar: Entity<AppMenuBar>, cx: &mut App) {
-    let mode = cx.theme().mode;
+    let _mode = cx.theme().mode;
     cx.set_menus(vec![
         Menu {
             name: title.into(),
@@ -41,15 +40,7 @@ fn update_app_menu(title: impl Into<SharedString>, app_menu_bar: Entity<AppMenuB
                 MenuItem::Separator,
                 MenuItem::action("Open...", Open),
                 MenuItem::Separator,
-                MenuItem::Submenu(Menu {
-                    name: "Appearance".into(),
-                    items: vec![
-                        MenuItem::action("Light", SwitchThemeMode(ThemeMode::Light))
-                            .checked(!mode.is_dark()),
-                        MenuItem::action("Dark", SwitchThemeMode(ThemeMode::Dark))
-                            .checked(mode.is_dark()),
-                    ],
-                }),
+                MenuItem::Submenu(Menu { name: "Appearance".into(), items: vec![] }),
                 theme_menu(cx),
                 language_menu(cx),
                 MenuItem::Separator,
