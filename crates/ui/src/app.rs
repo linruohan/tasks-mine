@@ -1,13 +1,13 @@
 use gpui::{
-    AnyView, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
-    StatefulInteractiveElement, Styled, Subscription, Window, div, prelude::FluentBuilder, px,
+    div, prelude::FluentBuilder, px, AnyView, AppContext, Context, Entity, InteractiveElement,
+    IntoElement, ParentElement, Render, StatefulInteractiveElement, Styled, Subscription, Window,
 };
 use gpui_component::{
-    ActiveTheme, Icon, IconName, h_flex,
-    input::{Input, InputEvent, InputState},
-    resizable::{h_resizable, resizable_panel},
-    sidebar::{Sidebar, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuItem},
+    h_flex, input::{Input, InputEvent, InputState}, resizable::{h_resizable, resizable_panel}, sidebar::{Sidebar, SidebarHeader, SidebarMenu, SidebarMenuItem},
     v_flex,
+    ActiveTheme,
+    Icon,
+    IconName,
 };
 
 use super::view::{CodeHubView, DtsView, ExcelView, HiveView, RequirementView};
@@ -189,7 +189,6 @@ impl Render for TasksApp {
                             )
                             .children(filtered.iter().map(|(idx, story)| {
                                 let idx = *idx;
-                                SidebarGroup::new(story.name).child(
                                     SidebarMenu::new().child(
                                         SidebarMenuItem::new(story.name)
                                             .active(self.active_index == Some(idx))
@@ -197,8 +196,7 @@ impl Render for TasksApp {
                                                 this.active_index = Some(idx);
                                                 cx.notify();
                                             })),
-                                    ),
-                                )
+                                    )
                             })),
                     ),
                 )

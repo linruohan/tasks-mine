@@ -2,7 +2,6 @@ pub mod app;
 mod app_menus;
 mod themes;
 mod title_bar;
-mod tools;
 mod utils;
 pub mod view;
 use gpui::{
@@ -21,7 +20,6 @@ use gpui_component::{
     v_flex,
 };
 use serde::Deserialize;
-pub use tools::*;
 use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 use crate::title_bar::AppTitleBar;
