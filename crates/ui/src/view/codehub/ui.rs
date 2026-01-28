@@ -1,44 +1,37 @@
 use std::{fs::File, io::prelude::*};
 
-use chrono::{DateTime, Utc};
+use chrono::Days;
 use gpui::{
     App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
-    Styled, Subscription, Window, div, px, rgb,
+    SharedString, Styled, Subscription, Window, div, rgb,
 };
 use gpui_component::{
     ActiveTheme, Icon, IconName, Sizable, StyledExt, WindowExt,
     button::*,
+    date_picker::{DatePicker, DatePickerEvent, DatePickerState},
     h_flex,
     input::{Input, InputEvent, InputState},
     v_flex,
 };
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MergeRequest {
-    pub id: String,
-    pub title: String,
-    pub author: String,
-    pub created_at: DateTime<Utc>,
-    pub additions: i32,
-    pub deletions: i32,
-    pub status: String,
-}
+use tools::MergeRequest;
 
 pub struct CodeHubView {
     mrs: Vec<MergeRequest>,
-    filter_start_date: String,
-    filter_end_date: String,
-    start_date_input: Entity<InputState>,
-    end_date_input: Entity<InputState>,
+    date_range_picker: Entity<DatePickerState>,
+    date_picker_value: Option<String>,
     search_input: Entity<InputState>,
+    search_value: Option<SharedString>,
     _subscriptions: Vec<Subscription>,
 }
 
 impl CodeHubView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let start_date_input = cx.new(|cx| InputState::new(window, cx).placeholder("YYYY-MM-DD"));
-        let end_date_input = cx.new(|cx| InputState::new(window, cx).placeholder("YYYY-MM-DD"));
+        let now = chrono::Local::now().naive_local().date();
+        let date_range_picker = cx.new(|cx| {
+            let mut picker = DatePickerState::new(window, cx);
+            picker.set_date((now, now.checked_add_days(Days::new(4)).unwrap()), window, cx);
+            picker
+        });
         let search_input = cx.new(|cx| InputState::new(window, cx).placeholder("搜索 MR..."));
 
         // 添加示例数据
@@ -47,75 +40,117 @@ impl CodeHubView {
                 id: "1".to_string(),
                 title: "添加用户认证功能".to_string(),
                 author: "张三".to_string(),
-                created_at: Utc::now(),
-                additions: 120,
-                deletions: 30,
+                created_at: "2026-01-21 10:00:00".to_string(),
+                add_lines: 120,
+                del_lines: 30,
                 status: "merged".to_string(),
             },
             MergeRequest {
                 id: "2".to_string(),
                 title: "修复登录页面 bug".to_string(),
                 author: "李四".to_string(),
-                created_at: Utc::now(),
-                additions: 45,
-                deletions: 15,
+                created_at: "2026-01-25 10:00:00".to_string(),
+                add_lines: 45,
+                del_lines: 15,
                 status: "merged".to_string(),
             },
             MergeRequest {
                 id: "3".to_string(),
                 title: "优化数据库查询性能".to_string(),
                 author: "王五".to_string(),
-                created_at: Utc::now(),
-                additions: 80,
-                deletions: 25,
+                created_at: "2026-01-26 10:00:00".to_string(),
+                add_lines: 80,
+                del_lines: 25,
                 status: "open".to_string(),
             },
         ];
-
-        let mut this = Self {
-            mrs,
-            filter_start_date: String::new(),
-            filter_end_date: String::new(),
-            start_date_input,
-            end_date_input,
-            search_input,
-            _subscriptions: vec![],
-        };
-
         // 添加订阅
-        let subscription = cx.subscribe(&this.search_input, |_this, _, event, cx| {
-            if matches!(event, InputEvent::Change) {
-                cx.notify();
-            }
-        });
-        this._subscriptions.push(subscription);
+        let subscriptions = vec![
+            cx.subscribe_in(&search_input, window, Self::on_input_event),
+            cx.subscribe(&date_range_picker, move |this, _, ev, _| match ev {
+                DatePickerEvent::Change(date) => {
+                    // Some("2026-01-21 - 2026-01-23")
+                    this.date_picker_value = date.format("%Y-%m-%d").map(|s| s.to_string());
+                    if let Some(date_range) = &this.date_picker_value {
+                        let dates: Vec<&str> = date_range.split(" - ").collect();
+                        if dates.len() == 2 {
+                            let start_date =
+                                chrono::NaiveDate::parse_from_str(dates[0], "%Y-%m-%d")
+                                    .unwrap_or(now);
+                            let end_date = chrono::NaiveDate::parse_from_str(dates[1], "%Y-%m-%d")
+                                .unwrap_or(now);
+                            // 过滤 MR 列表
+                            this.mrs.retain(|mr| {
+                                match chrono::NaiveDateTime::parse_from_str(
+                                    &mr.created_at,
+                                    "%Y-%m-%d %H:%M:%S",
+                                ) {
+                                    Ok(mr_datetime) => {
+                                        let mr_date = mr_datetime.date();
+                                        mr_date >= start_date && mr_date <= end_date
+                                    },
+                                    Err(_) => true,
+                                }
+                            });
+                        }
+                    }
+                    // this.mrs.retain(|mr| {
+                    //     match chrono::DateTime::parse_from_str(&mr.created_at, "%Y-%m-%d
+                    // %H:%M:%S")     {
+                    //         Ok(mr_date) => {
+                    //             let mr_naive_date = mr_date.naive_local().date();
+                    //             mr_naive_date >= start_date && mr_naive_date <= end_date
+                    //         },
+                    //         Err(_) => true,
+                    //     }
+                    // });
+                },
+            }),
+        ];
 
-        let subscription = cx.subscribe(&this.start_date_input, |this, _, event, cx| {
-            if matches!(event, InputEvent::Change) {
-                this.filter_start_date = this.start_date_input.read(cx).value().to_string();
-                cx.notify();
-            }
-        });
-        this._subscriptions.push(subscription);
-
-        let subscription = cx.subscribe(&this.end_date_input, |this, _, event, cx| {
-            if matches!(event, InputEvent::Change) {
-                this.filter_end_date = this.end_date_input.read(cx).value().to_string();
-                cx.notify();
-            }
-        });
-        this._subscriptions.push(subscription);
-
-        this
+        Self {
+            mrs,
+            date_range_picker,
+            date_picker_value: None,
+            search_input,
+            search_value: None,
+            _subscriptions: subscriptions,
+        }
     }
 
     pub fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| Self::new(window, cx))
     }
 
+    fn on_input_event(
+        &mut self,
+        state: &Entity<InputState>,
+        event: &InputEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        match event {
+            InputEvent::Change => {
+                let text = state.read(cx).value();
+                if state == &self.search_input {
+                    println!("Set disabled value: {}", text.clone());
+                    self.search_value = Some(text.clone());
+                    self.search_input.update(cx, |this, cx| {
+                        this.set_value(text, window, cx);
+                    })
+                } else {
+                    println!("Change: {}", text)
+                }
+            },
+            InputEvent::PressEnter { secondary } => println!("PressEnter secondary: {}", secondary),
+            InputEvent::Focus => println!("Focus"),
+            InputEvent::Blur => println!("Blur"),
+        };
+    }
+
     fn calculate_stats(&self) -> (i32, i32, usize) {
-        let total_additions: i32 = self.mrs.iter().map(|mr| mr.additions).sum();
-        let total_deletions: i32 = self.mrs.iter().map(|mr| mr.deletions).sum();
+        let total_additions: i32 = self.mrs.iter().map(|mr| mr.add_lines).sum();
+        let total_deletions: i32 = self.mrs.iter().map(|mr| mr.del_lines).sum();
         let total_count = self.mrs.len();
         (total_additions, total_deletions, total_count)
     }
@@ -125,21 +160,23 @@ impl Render for CodeHubView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let search_query = self.search_input.read(cx).value().trim().to_lowercase();
 
-        // 根据搜索查询过滤MR
-        let filtered_mrs: Vec<&MergeRequest> = if search_query.is_empty() {
-            self.mrs.iter().collect()
-        } else {
-            self.mrs
-                .iter()
-                .filter(|mr| {
-                    mr.title.to_lowercase().contains(&search_query)
-                        || mr.author.to_lowercase().contains(&search_query)
-                        || mr.id.contains(&search_query)
-                })
-                .collect()
-        };
+        // 根据搜索查询过滤MR（日期过滤已在 on_date_picker_change 中完成）
+        let filtered_mrs: Vec<&MergeRequest> = self
+            .mrs
+            .iter()
+            .filter(|mr: &&MergeRequest| {
+                // 搜索过滤
+                search_query.is_empty()
+                    || mr.title.to_lowercase().contains(&search_query)
+                    || mr.author.to_lowercase().contains(&search_query)
+                    || mr.id.contains(&search_query)
+            })
+            .collect();
 
-        let (additions, deletions, count) = self.calculate_stats();
+        // 计算过滤后的统计数据
+        let total_additions: i32 = filtered_mrs.iter().map(|mr| mr.add_lines).sum();
+        let total_deletions: i32 = filtered_mrs.iter().map(|mr| mr.del_lines).sum();
+        let total_count = filtered_mrs.len();
 
         v_flex()
             .size_full()
@@ -166,14 +203,18 @@ impl Render for CodeHubView {
                 h_flex()
                     .w_full()
                     .gap_4()
-                    .child(self.stat_card("MR 数量", &count.to_string(), cx))
-                    .child(self.stat_card("新增行数", &format!("+{}", additions), cx))
-                    .child(self.stat_card("删除行数", &format!("-{}", deletions), cx))
-                    .child(self.stat_card("净变化", &format!("{:+}", additions - deletions), cx)),
+                    .child(self.stat_card("MR 数量", &total_count.to_string(), cx))
+                    .child(self.stat_card("新增行数", &format!("+{}", total_additions), cx))
+                    .child(self.stat_card("删除行数", &format!("-{}", total_deletions), cx))
+                    .child(self.stat_card(
+                        "净变化",
+                        &format!("{:+}", total_additions + total_deletions),
+                        cx,
+                    )),
             )
             .child(
                 // 搜索区
-                h_flex()
+                v_flex()
                     .w_full()
                     .gap_4()
                     .child(
@@ -184,46 +225,26 @@ impl Render for CodeHubView {
                         ),
                     )
                     .child(
-                        Button::new("open-file-btn")
-                            .primary()
-                            .label("打开文件")
-                            .icon(Icon::new(IconName::FolderOpen))
-                            .on_click(cx.listener(
-                                |this: &mut CodeHubView, _event, window: &mut Window, cx| {
-                                    this.handle_open_file(window, cx);
-                                },
-                            )),
-                    ),
-            )
-            .child(
-                // 筛选区
-                h_flex()
-                    .w_full()
-                    .gap_4()
-                    .items_end()
-                    .child(
-                        v_flex()
-                            .gap_1()
-                            .child(div().text_sm().child("开始日期"))
-                            .child(Input::new(&self.start_date_input).w(px(200.0)).cleanable(true)),
-                    )
-                    .child(
-                        v_flex()
-                            .gap_1()
-                            .child(div().text_sm().child("结束日期"))
-                            .child(Input::new(&self.end_date_input).w(px(200.0)).cleanable(true)),
-                    )
-                    .child(
-                        Button::new("filter-btn")
-                            .primary()
-                            .label("查询")
-                            .icon(Icon::new(IconName::Search)),
-                    )
-                    .child(
-                        Button::new("add-mr-btn")
-                            .primary()
-                            .label("添加 MR")
-                            .icon(Icon::new(IconName::Plus)),
+                        // 筛选区
+                        h_flex()
+                            .w_full()
+                            .gap_4()
+                            .items_end()
+                            .child(v_flex().gap_1().child(DatePicker::new(&self.date_range_picker)))
+                            .child(
+                                Button::new("filter-btn")
+                                    .primary()
+                                    .label("查询")
+                                    .icon(Icon::new(IconName::Search))
+                                    .on_click(cx.listener(|this, _, _window, cx| {
+                                        // 使用 update 方法来访问 DatePickerState 的可变引用
+                                        this.date_range_picker.update(cx, |_picker_state, _cx| {
+                                            // 在这里可以访问 picker_state 的方法
+                                            println!("Picker state in update: [DatePickerState]");
+                                            // 尝试调用可能存在的方法来获取日期范围
+                                        });
+                                    })),
+                            ),
                     ),
             )
             .child(
@@ -316,7 +337,7 @@ impl CodeHubView {
                             .child("•")
                             .child(mr.author.clone())
                             .child("•")
-                            .child(mr.created_at.format("%Y-%m-%d %H:%M").to_string()),
+                            .child(mr.created_at.clone()),
                     ),
             )
             .child(
@@ -329,9 +350,8 @@ impl CodeHubView {
                             .py_1()
                             .rounded_md()
                             .bg(rgb(0x22c55e))
-                            .text_color(rgb(0x22c55e))
                             .text_sm()
-                            .child(format!("+{}", mr.additions)),
+                            .child(format!("+{}", mr.add_lines)),
                     )
                     .child(
                         div()
@@ -339,9 +359,8 @@ impl CodeHubView {
                             .py_1()
                             .rounded_md()
                             .bg(rgb(0xef4444))
-                            .text_color(rgb(0xef4444))
                             .text_sm()
-                            .child(format!("-{}", mr.deletions)),
+                            .child(format!("-{}", mr.del_lines)),
                     ),
             )
             .child(
@@ -379,10 +398,9 @@ impl CodeHubView {
                     writeln!(file, "ID: {}", mr.id).unwrap();
                     writeln!(file, "标题: {}", mr.title).unwrap();
                     writeln!(file, "作者: {}", mr.author).unwrap();
-                    writeln!(file, "创建时间: {}", mr.created_at.format("%Y-%m-%d %H:%M:%S"))
-                        .unwrap();
-                    writeln!(file, "新增行数: +{}", mr.additions).unwrap();
-                    writeln!(file, "删除行数: -{}", mr.deletions).unwrap();
+                    writeln!(file, "创建时间: {}", mr.created_at).unwrap();
+                    writeln!(file, "新增行数: +{}", mr.add_lines).unwrap();
+                    writeln!(file, "删除行数: -{}", mr.del_lines).unwrap();
                     writeln!(file, "状态: {}", mr.status).unwrap();
                     writeln!(file, "--------------").unwrap();
                 }

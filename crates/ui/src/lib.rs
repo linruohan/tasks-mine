@@ -12,7 +12,6 @@ use gpui::{
 };
 use gpui_component::{
     ActiveTheme, Root, TitleBar, WindowExt,
-    dock::Panel,
     group_box::{GroupBox, GroupBoxVariants as _},
     h_flex,
     notification::Notification,
