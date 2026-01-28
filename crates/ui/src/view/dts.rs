@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use gpui::{
-    Context, InteractiveElement, IntoElement, ParentElement, Render, Styled, Window, div, px, rgb,
+    App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
+    Styled, Window, div, px, rgb,
 };
 use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
 use serde::{Deserialize, Serialize};
@@ -24,6 +25,10 @@ pub struct DtsView {
 impl DtsView {
     pub fn new() -> Self {
         Self { issues: vec![], filter_status: "all".to_string() }
+    }
+
+    pub fn view(_window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|_| Self::new())
     }
 
     fn calculate_stats(&self) -> (usize, usize, usize) {

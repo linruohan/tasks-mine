@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use gpui::{App, AppContext, Context, Entity, Window};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,7 +17,11 @@ pub struct RequestClient {
 }
 
 impl RequestClient {
-    pub fn new() -> Self {
+    pub fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| Self::new(window, cx))
+    }
+
+    pub fn new(_: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { cookies: HashMap::new() }
     }
 

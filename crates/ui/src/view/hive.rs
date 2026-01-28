@@ -1,6 +1,6 @@
 use gpui::{
-    Context, IntoElement, ParentElement, Render, Styled, Window, div, prelude::FluentBuilder, px,
-    relative, rgb,
+    App, AppContext, Context, Entity, IntoElement, ParentElement, Render, Styled, Window, div,
+    prelude::FluentBuilder, px, relative, rgb,
 };
 use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
 use serde::{Deserialize, Serialize};
@@ -37,7 +37,11 @@ pub struct HiveView {
 }
 
 impl HiveView {
-    pub fn new() -> Self {
+    pub fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| Self::new(window, cx))
+    }
+
+    pub fn new(_: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { active_tab: 0, failed_cases: vec![], virtual_envs: vec![], jobs: vec![] }
     }
 }

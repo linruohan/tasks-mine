@@ -1,4 +1,6 @@
-use gpui::{Context, IntoElement, ParentElement, Render, Styled, Window, div};
+use gpui::{
+    App, AppContext, Context, Entity, IntoElement, ParentElement, Render, Styled, Window, div,
+};
 use gpui_component::{ActiveTheme, Icon, IconName, StyledExt, button::*, h_flex, v_flex};
 
 pub struct ExcelView {
@@ -6,7 +8,11 @@ pub struct ExcelView {
 }
 
 impl ExcelView {
-    pub fn new() -> Self {
+    pub fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| Self::new(window, cx))
+    }
+
+    pub fn new(_: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { file_path: String::new() }
     }
 }

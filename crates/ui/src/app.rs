@@ -64,37 +64,37 @@ impl TasksApp {
         cx.new(|cx| Self::new(init_story, window, cx))
     }
 
-    fn build_stories(_window: &mut Window, cx: &mut Context<Self>) -> Vec<StoryItem> {
+    fn build_stories(window: &mut Window, cx: &mut Context<Self>) -> Vec<StoryItem> {
         vec![
             StoryItem::new(
                 "CodeHub",
                 "MR 管理与统计",
                 IconName::GitMerge,
-                cx.new(|_| CodeHubView::new()).into(),
+                CodeHubView::view(window, cx).into(),
             ),
             StoryItem::new(
                 "DTS",
                 "问题单管理与统计",
                 IconName::Bug,
-                cx.new(|_| DtsView::new()).into(),
+                DtsView::view(window, cx).into(),
             ),
             StoryItem::new(
                 "Excel",
                 "Excel 读写工具",
                 IconName::FileSpreadsheet,
-                cx.new(|_| ExcelView::new()).into(),
+                ExcelView::view(window, cx).into(),
             ),
             StoryItem::new(
                 "Hive",
                 "Hive 平台快速入口",
                 IconName::Server,
-                cx.new(|_| HiveView::new()).into(),
+                HiveView::view(window, cx).into(),
             ),
             StoryItem::new(
                 "Requirement",
                 "需求管理",
                 IconName::ListChecks,
-                cx.new(|_| RequirementView::new()).into(),
+                RequirementView::view(window, cx).into(),
             ),
         ]
     }

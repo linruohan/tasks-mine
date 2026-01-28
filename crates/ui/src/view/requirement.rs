@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use gpui::{
-    Context, InteractiveElement, IntoElement, ParentElement, Render, Styled, Window, div, px, rgb,
+    App, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
+    Styled, Window, div, px, rgb,
 };
 use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt, button::*, h_flex, v_flex};
 use serde::{Deserialize, Serialize};
@@ -22,7 +23,11 @@ pub struct RequirementView {
 }
 
 impl RequirementView {
-    pub fn new() -> Self {
+    pub fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| Self::new(window, cx))
+    }
+
+    pub fn new(_: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { requirements: vec![] }
     }
 }
